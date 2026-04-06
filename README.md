@@ -28,11 +28,11 @@ This API was engineered moving beyond basic CRUD operations, implementing advanc
 
 ## ⚙️ Setup & Installation
 
-The project is fully Dockerized using **Laravel Sail**, making setup effortless.
+The project is fully Dockerized natively, ensuring a robust environment that perfectly mimics production.
 
 ### Prerequisites
 *   Docker & Docker Compose installed.
-*   Composer (optional, for local vendor installation before Sail).
+*   Composer (optional, for local vendor installation).
 
 ### Installation Steps
 
@@ -125,7 +125,7 @@ The application features a comprehensive, robust autonomous test suite covering 
 
 To execute the test suite:
 ```bash
-./vendor/bin/sail artisan test
+docker-compose exec app php artisan test
 ```
 
 **Test Coverage Highlights:**

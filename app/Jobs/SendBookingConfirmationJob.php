@@ -15,6 +15,11 @@ class SendBookingConfirmationJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
+     * The number of times the job may be attempted.
+     */
+    public int $tries = 3;
+
+    /**
      * Create a new job instance.
      */
     public function __construct(
@@ -23,23 +28,22 @@ class SendBookingConfirmationJob implements ShouldQueue
 
     /**
      * Execute the job.
+     *
+     * In a real-world application, this would send an email via a
+     * Mailable class or dispatch a notification to the guest.
      */
     public function handle(): void
     {
-        // Simulate sending an email or API request to a 3rd party
-        $bookingCode = "BKG-" . str_pad((string)$this->booking->id, 6, "0", STR_PAD_LEFT);
-        
-        Log::info("Sending booking confirmation snippet...", [
+        $bookingCode = 'BKG-' . str_pad((string) $this->booking->id, 6, '0', STR_PAD_LEFT);
+
+        Log::info('Booking confirmation dispatched', [
             'booking_id' => $this->booking->id,
             'hotel_id'   => $this->booking->hotel_id,
             'user_email' => $this->booking->guest_email,
-            'total_price'=> $this->booking->total_price,
+            'total_price' => $this->booking->total_price,
             'code'       => $bookingCode,
         ]);
 
-        // Simulated delay
-        sleep(2);
-        
-        Log::info("Successfully sent confirmation to {$this->booking->guest_email}");
+        // TODO: Replace with actual Mail::to($this->booking->guest_email)->send(new BookingConfirmationMail($this->booking));
     }
 }

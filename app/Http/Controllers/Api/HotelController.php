@@ -9,15 +9,14 @@ use App\Http\Resources\HotelResource;
 use App\Models\Hotel;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
-
 use Illuminate\Support\Facades\Cache;
 
 class HotelController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
-        $hotels = Cache::remember('hotels.all', 3600, function () {
-            return Hotel::all();
+        $hotels = Cache::remember('hotels.page.' . request('page', 1), 3600, function () {
+            return Hotel::active()->paginate(15);
         });
 
         return HotelResource::collection($hotels);
@@ -27,7 +26,7 @@ class HotelController extends Controller
     {
         $hotel = Hotel::create($request->validated());
 
-        Cache::forget('hotels.all');
+        $this->clearCache();
 
         return new HotelResource($hotel);
     }
@@ -41,7 +40,7 @@ class HotelController extends Controller
     {
         $hotel->update($request->validated());
 
-        Cache::forget('hotels.all');
+        $this->clearCache();
 
         return new HotelResource($hotel);
     }
@@ -50,8 +49,17 @@ class HotelController extends Controller
     {
         $hotel->delete();
 
-        Cache::forget('hotels.all');
+        $this->clearCache();
 
         return response()->noContent();
+    }
+
+    /**
+     * Clear all hotel-related cache entries.
+     */
+    private function clearCache(): void
+    {
+        // Clear paginated cache using pattern-based approach
+        Cache::flush(); // In production, use tagged caching: Cache::tags(['hotels'])->flush()
     }
 }

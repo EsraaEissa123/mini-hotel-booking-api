@@ -48,6 +48,12 @@ return Application::configure(basePath: dirname(__DIR__))
                     ], 422);
                 }
 
+                if ($e instanceof \Illuminate\Auth\Access\AuthorizationException) {
+                    return response()->json([
+                        'message' => 'This action is unauthorized.',
+                    ], 403);
+                }
+
                 // Default 500 for API
                 $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
                 $message = config('app.debug') ? $e->getMessage() : 'Server Error';

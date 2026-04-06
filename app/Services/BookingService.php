@@ -10,9 +10,11 @@ use App\Exceptions\OccupancyExceededException;
 use App\Jobs\SendBookingConfirmationJob;
 use App\Models\Booking;
 use App\Models\Hotel;
+use App\Models\RoomType;
 use App\Services\Contracts\BookingServiceInterface;
 use App\Services\Contracts\PricingServiceInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class BookingService implements BookingServiceInterface
 {
@@ -74,7 +76,7 @@ class BookingService implements BookingServiceInterface
             // Dispatch confirmation job
             SendBookingConfirmationJob::dispatch($booking);
 
-            \Illuminate\Support\Facades\Log::info("Booking created successfully", [
+            Log::info('Booking created successfully', [
                 'booking_id' => $booking->id,
                 'user_id'    => $booking->user_id,
                 'hotel_id'   => $booking->hotel_id,
@@ -98,7 +100,7 @@ class BookingService implements BookingServiceInterface
             $oldStatus = $booking->status->value;
             $booking->update(['status' => BookingStatus::CANCELLED]);
 
-            \Illuminate\Support\Facades\Log::info("Booking cancelled successfully", [
+            Log::info('Booking cancelled successfully', [
                 'booking_id' => $booking->id,
                 'user_id'    => $booking->user_id,
                 'old_status' => $oldStatus,

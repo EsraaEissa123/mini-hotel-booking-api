@@ -22,3 +22,6 @@ Route::prefix('auth')->group(function () {
 // Hotel and RoomType CRUD routes (public for now based on requirements, auth protection will be added later if instructed)
 Route::apiResource('hotels', \App\Http\Controllers\Api\HotelController::class);
 Route::apiResource('hotels.room-types', \App\Http\Controllers\Api\RoomTypeController::class)->scoped();
+
+Route::get('/availability', [\App\Http\Controllers\Api\AvailabilityController::class, 'index'])->name('availability.index');
+

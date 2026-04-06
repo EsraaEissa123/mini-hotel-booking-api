@@ -47,20 +47,19 @@ The project is fully Dockerized using **Laravel Sail**, making setup effortless.
     ```bash
     cp .env.example .env
     ```
-    *(The default `.env.example` is fully pre-configured to work instantly with Docker/Sail).*
 
-3.  **Install Dependencies & Start Docker Containers:**
+3.  **Build & Start Docker Containers:**
     ```bash
-    composer install
-    ./vendor/bin/sail up -d
+    docker-compose up -d --build
     ```
 
-4.  **Generate App Key & Run Migrations (with Seeders):**
+4.  **Install PHP Dependencies & Setup App:**
     ```bash
-    ./vendor/bin/sail artisan key:generate
-    ./vendor/bin/sail artisan migrate --seed
+    docker-compose exec app composer install
+    docker-compose exec app php artisan key:generate
+    docker-compose exec app php artisan migrate --seed
     ```
-    *(Seeding generates a rich dataset: 4 hotels globally, complete with varied room types, capacities, and a default test user).*
+    *(Seeding generates a rich dataset: 4 hotels globally, complete with varied room types, capacities, and a default test user `test@example.com` / `password`).*
 
 ---
 

@@ -1,0 +1,146 @@
+{
+  "info": {
+    "name": "Mini Hotel Booking API",
+    "description": "Postman Collection for the Mini Hotel Booking API constructed with Laravel 11",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/auth/register", "host": ["{{base_url}}"], "path": ["api", "auth", "register"] }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/auth/logout", "host": ["{{base_url}}"], "path": ["api", "auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public API",
+      "item": [
+        {
+          "name": "Get Hotels",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": { "raw": "{{base_url}}/api/hotels", "host": ["{{base_url}}"], "path": ["api", "hotels"] }
+          }
+        },
+        {
+          "name": "Get Hotel Details",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": { "raw": "{{base_url}}/api/hotels/1", "host": ["{{base_url}}"], "path": ["api", "hotels", "1"] }
+          }
+        },
+        {
+          "name": "Get Room Types for Hotel",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": { "raw": "{{base_url}}/api/hotels/1/room-types", "host": ["{{base_url}}"], "path": ["api", "hotels", "1", "room-types"] }
+          }
+        },
+        {
+          "name": "Search Availability",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": {
+              "raw": "{{base_url}}/api/availability?city=Cairo&check_in=2026-05-01&check_out=2026-05-05&adults=2",
+              "host": ["{{base_url}}"],
+              "path": ["api", "availability"],
+              "query": [
+                { "key": "city", "value": "Cairo" },
+                { "key": "check_in", "value": "2026-05-01" },
+                { "key": "check_out", "value": "2026-05-05" },
+                { "key": "adults", "value": "2" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Protected API",
+      "item": [
+        {
+          "name": "Create Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"hotel_id\": 1,\n  \"room_type_id\": 2,\n  \"guest_name\": \"John Doe\",\n  \"guest_email\": \"john@example.com\",\n  \"check_in\": \"2026-05-01\",\n  \"check_out\": \"2026-05-05\",\n  \"rooms_count\": 1,\n  \"adults_count\": 2\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/bookings", "host": ["{{base_url}}"], "path": ["api", "bookings"] }
+          }
+        },
+        {
+          "name": "Get My Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/bookings", "host": ["{{base_url}}"], "path": ["api", "bookings"] }
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/bookings/1/cancel", "host": ["{{base_url}}"], "path": ["api", "bookings", "1", "cancel"] }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "token", "value": "YOUR_TOKEN_HERE" }
+  ]
+}

@@ -7,15 +7,16 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreBookingRequest;
 use App\Http\Resources\BookingResource;
 use App\Models\Booking;
-use App\Services\BookingService;
+use App\Services\Contracts\BookingServiceInterface;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Auth;
 
 class BookingController extends Controller
 {
     public function __construct(
-        private readonly BookingService $bookingService
+        private readonly BookingServiceInterface $bookingService
     ) {}
+
 
     public function index(): AnonymousResourceCollection
     {

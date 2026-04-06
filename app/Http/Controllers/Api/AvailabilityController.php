@@ -6,14 +6,15 @@ use App\DTOs\AvailabilitySearchDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AvailabilitySearchRequest;
 use App\Http\Resources\AvailabilityResource;
-use App\Services\AvailabilityService;
+use App\Services\Contracts\AvailabilityServiceInterface;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class AvailabilityController extends Controller
 {
     public function __construct(
-        private readonly AvailabilityService $availabilityService
+        private readonly AvailabilityServiceInterface $availabilityService
     ) {}
+
 
     public function index(AvailabilitySearchRequest $request): AnonymousResourceCollection
     {

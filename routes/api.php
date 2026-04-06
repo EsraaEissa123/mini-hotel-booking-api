@@ -18,7 +18,9 @@ Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
 
         Route::get('/bookings', [\App\Http\Controllers\Api\BookingController::class, 'index'])->name('bookings.index');
-        Route::post('/bookings', [\App\Http\Controllers\Api\BookingController::class, 'store'])->name('bookings.store');
+        Route::post('/bookings', [\App\Http\Controllers\Api\BookingController::class, 'store'])
+            ->middleware('throttle:bookings')
+            ->name('bookings.store');
         Route::get('/bookings/{booking}', [\App\Http\Controllers\Api\BookingController::class, 'show'])->name('bookings.show');
         Route::patch('/bookings/{booking}/cancel', [\App\Http\Controllers\Api\BookingController::class, 'cancel'])->name('bookings.cancel');
     });
@@ -28,5 +30,7 @@ Route::prefix('auth')->group(function () {
 Route::apiResource('hotels', \App\Http\Controllers\Api\HotelController::class);
 Route::apiResource('hotels.room-types', \App\Http\Controllers\Api\RoomTypeController::class)->scoped();
 
-Route::get('/availability', [\App\Http\Controllers\Api\AvailabilityController::class, 'index'])->name('availability.index');
+Route::get('/availability', [\App\Http\Controllers\Api\AvailabilityController::class, 'index'])
+    ->middleware('throttle:60,1')
+    ->name('availability.index');
 

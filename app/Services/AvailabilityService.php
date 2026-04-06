@@ -4,13 +4,16 @@ namespace App\Services;
 
 use App\DTOs\AvailabilitySearchDTO;
 use App\Models\Hotel;
+use App\Services\Contracts\AvailabilityServiceInterface;
+use App\Services\Contracts\PricingServiceInterface;
 use Illuminate\Support\Collection;
 
-class AvailabilityService
+class AvailabilityService implements AvailabilityServiceInterface
 {
     public function __construct(
-        private readonly PricingService $pricingService
+        private readonly PricingServiceInterface $pricingService
     ) {}
+
 
     public function search(AvailabilitySearchDTO $dto): Collection
     {

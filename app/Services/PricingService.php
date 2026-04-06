@@ -2,26 +2,37 @@
 
 namespace App\Services;
 
+use App\Services\Contracts\PricingServiceInterface;
+use App\Services\Pricing\Rules\PricingRuleInterface;
+use App\Services\Pricing\Rules\WeekendSurchargeRule;
+use App\Services\Pricing\Rules\LongStayDiscountRule;
 use Illuminate\Support\Carbon;
 
-class PricingService
+class PricingService implements PricingServiceInterface
 {
-    private const WEEKEND_SURCHARGE_MULTIPLIER = 1.20; // +20%
-    private const LONG_STAY_DISCOUNT_MULTIPLIER = 0.90; // -10%
-    private const LONG_STAY_MIN_NIGHTS = 5;
-
     /**
-     * Calculate total price based on rules.
+     * The rules to be applied to the pricing.
+     * 
+     * @var array<PricingRuleInterface>
      */
+    private array $rules;
+
+    public function __construct()
+    {
+        // For a true Senior implementation, these could be injected via a RuleRegistry or Factory.
+        // For now, we inject them manually in the constructor.
+        $this->rules = [
+            new WeekendSurchargeRule(),
+            new LongStayDiscountRule(),
+        ];
+    }
+
     public function calculate(float $basePrice, Carbon $checkIn, Carbon $checkOut, int $roomsCount = 1): float
     {
         $breakdown = $this->breakdown($basePrice, $checkIn, $checkOut, $roomsCount);
         return $breakdown['total_price'];
     }
 
-    /**
-     * Provide a detailed breakdown of the pricing.
-     */
     public function breakdown(float $basePrice, Carbon $checkIn, Carbon $checkOut, int $roomsCount = 1): array
     {
         $nightsCount = $checkIn->diffInDays($checkOut);
@@ -31,13 +42,14 @@ class PricingService
 
         $currentDate = $checkIn->copy();
         
-        // 1. Loop each night individually
+        // 1. Process Nightly Rules
         for ($i = 0; $i < $nightsCount; $i++) {
             $nightPrice = $basePrice;
 
-            // 2. If night falls on Friday or Saturday -> apply +20% surcharge
-            if ($currentDate->isFriday() || $currentDate->isSaturday()) {
-                $nightPrice *= self::WEEKEND_SURCHARGE_MULTIPLIER;
+            foreach ($this->rules as $rule) {
+                if ($rule->isNightly()) {
+                    $nightPrice = $rule->apply($nightPrice, $currentDate, $nightsCount);
+                }
             }
 
             $nightlyDetails[] = [
@@ -45,23 +57,21 @@ class PricingService
                 'price' => round($nightPrice, 2),
             ];
 
-            // 3. Sum all nightly prices
             $sumNightly += $nightPrice;
-
             $currentDate->addDay();
         }
 
+        // 2. Process Final Total Rules
         $totalBeforeDiscount = $sumNightly;
         $totalAfterDiscount = $totalBeforeDiscount;
-        $discountAmount = 0.0;
 
-        // 4. If total nights >= 5 -> apply -10% discount on the total
-        if ($nightsCount >= self::LONG_STAY_MIN_NIGHTS) {
-            $totalAfterDiscount = $totalBeforeDiscount * self::LONG_STAY_DISCOUNT_MULTIPLIER;
-            $discountAmount = $totalBeforeDiscount - $totalAfterDiscount;
+        foreach ($this->rules as $rule) {
+            if ($rule->isFinal()) {
+                $totalAfterDiscount = $rule->apply($totalAfterDiscount, $checkIn, $nightsCount);
+            }
         }
 
-        // 5. Multiply by rooms_count
+        $discountAmount = $totalBeforeDiscount - $totalAfterDiscount;
         $finalTotal = $totalAfterDiscount * $roomsCount;
 
         return [

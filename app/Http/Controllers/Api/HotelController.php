@@ -10,16 +10,24 @@ use App\Models\Hotel;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
+use Illuminate\Support\Facades\Cache;
+
 class HotelController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
-        return HotelResource::collection(Hotel::all());
+        $hotels = Cache::remember('hotels.all', 3600, function () {
+            return Hotel::all();
+        });
+
+        return HotelResource::collection($hotels);
     }
 
     public function store(StoreHotelRequest $request): HotelResource
     {
         $hotel = Hotel::create($request->validated());
+
+        Cache::forget('hotels.all');
 
         return new HotelResource($hotel);
     }
@@ -33,12 +41,16 @@ class HotelController extends Controller
     {
         $hotel->update($request->validated());
 
+        Cache::forget('hotels.all');
+
         return new HotelResource($hotel);
     }
 
     public function destroy(Hotel $hotel): Response
     {
         $hotel->delete();
+
+        Cache::forget('hotels.all');
 
         return response()->noContent();
     }

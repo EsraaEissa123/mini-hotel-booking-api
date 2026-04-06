@@ -7,6 +7,7 @@ use App\Enums\BookingStatus;
 use App\Enums\HotelStatus;
 use App\Exceptions\InsufficientRoomsException;
 use App\Exceptions\OccupancyExceededException;
+use App\Jobs\SendBookingConfirmationJob;
 use App\Models\Booking;
 use App\Models\Hotel;
 use App\Models\RoomType;
@@ -54,7 +55,7 @@ class BookingService
             );
 
             // 8. Create booking
-            return Booking::create([
+            $booking = Booking::create([
                 'hotel_id'     => $dto->hotelId,
                 'room_type_id' => $dto->roomTypeId,
                 'user_id'      => $dto->userId,
@@ -65,8 +66,13 @@ class BookingService
                 'rooms_count'  => $dto->roomsCount,
                 'adults_count' => $dto->adultsCount,
                 'total_price'  => $totalPrice,
-                'status'       => BookingStatus::PENDING, // Or confirmed based on business logic, sticking to pure logic.
+                'status'       => BookingStatus::PENDING, 
             ]);
+
+            // Dispatch confirmation job
+            SendBookingConfirmationJob::dispatch($booking);
+
+            return $booking;
         });
     }
 

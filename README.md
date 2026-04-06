@@ -152,6 +152,33 @@ Base price $100 for 5 nights (Mon-Fri)
 }
 ```
 
+## Bonus Features (Implemented)
+
+This project exceeds the base requirements by including the following Senior-level additions:
+
+### 1. Docker Environment (Laravel Sail)
+The project is fully Dockerized. You can start the entire stack (App, MySQL, Redis) with a single command:
+```bash
+./vendor/bin/sail up -d
+```
+All environment variables are pre-configured for Sail compatibility.
+
+### 2. Redis Caching
+- **Implemented for `HotelController@index`**: Uses `Cache::remember` to cache the list of all hotels for 1 hour.
+- **Cache Invalidation**: Automatically clears the cache (`Cache::forget`) upon `store`, `update`, or `destroy` operations.
+- **Why?**: Drastically reduces Database I/O for read-heavy resources.
+
+### 3. Asynchronous Queue Jobs
+- **`SendBookingConfirmationJob`**: Dispatched after a successful booking.
+- **Why?**: Decouples the notification process from the HTTP request cycle, ensuring immediate response times for users.
+- **Setup**: Configured to use the `database` queue driver by default.
+
+### 4. Postman Collection
+A complete **Postman Collection** is included in the repository root: `Mini_Hotel_Booking_API_Postman_Collection.json`.
+
+## Senior Code Review
+A detailed professional audit of this codebase is available in the [code_review_report.md](file:///home/esraa/.gemini/antigravity/brain/b21f7a1d-0619-4a18-9d7e-f5aa469236a4/code_review_report.md) artifact, detailing architectural decisions, concurrency safety, and performance optimizations.
+
 ## Assumptions Made
 1. **Dynamic Room Pricing**: Pricing is fixed per room type but calculated dynamically based on dates.
 2. **Global Timezone**: All dates are handled exactly based on boundaries to avoid timezone issues.

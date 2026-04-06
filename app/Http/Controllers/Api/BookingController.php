@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\DTOs\CreateBookingDTO;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreBookingRequest;
+use App\Http\Requests\Booking\StoreBookingRequest;
 use App\Http\Resources\BookingResource;
 use App\Models\Booking;
 use App\Services\Contracts\BookingServiceInterface;

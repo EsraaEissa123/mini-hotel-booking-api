@@ -18,3 +18,7 @@ Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
     });
 });
+
+// Hotel and RoomType CRUD routes (public for now based on requirements, auth protection will be added later if instructed)
+Route::apiResource('hotels', \App\Http\Controllers\Api\HotelController::class);
+Route::apiResource('hotels.room-types', \App\Http\Controllers\Api\RoomTypeController::class)->scoped();

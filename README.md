@@ -1,186 +1,142 @@
-# Mini Hotel Booking API
+# 🏨 Mini Hotel Booking API
 
-A RESTful Hotel Booking API built with Laravel 11, PHP 8.2+, and MySQL.
+![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php&logoColor=white)
+![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0+-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
-## Project Description
-This API provides a streamlined experience for managing hotel bookings, specifically designed to demonstrate robust business logic, overbooking prevention, and dynamic pricing strategies.
+A robust, production-ready RESTful API for a mini hotel booking system. This project is built to demonstrate senior-level backend engineering practices, focusing on **data integrity, scalability, clean architecture, and real-world concurrency handling.**
 
-## Setup Instructions
+---
 
-1. **Clone the repository and install dependencies:**
-   ```bash
-   composer install
-   ```
+## ✨ System Architecture & Key Features
 
-2. **Configure your environment setup:**
-   ```bash
-   cp .env.example .env
-   php artisan key:generate
-   ```
-   **Note**: Update your `.env` with your desired MySQL Database credentials (`DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`).
+This API was engineered moving beyond basic CRUD operations, implementing advanced design patterns to solve real-world problems:
 
-3. **Run database migrations and seed data:**
-   ```bash
-   php artisan migrate --seed
-   ```
-   (Seed data includes a test user `test@example.com` / `password` and multiple fake hotels).
+*   **🛡️ Concurrency & Overbooking Prevention**: Utilizes **Pessimistic Locking** (`lockForUpdate`) wrapped in database transactions to absolutely guarantee that high-concurrency booking attempts on the last available room will never result in overbooking.
+*   **🧩 Strategy Pattern (Pricing Engine)**: Pricing logic is decoupled from controllers and services using the Strategy Pattern. Rules (like Weekend Surcharges and Long-Stay Discounts) are injected via Dependency Injection, making the system highly extensible.
+*   **🏛️ Service Layer & DTOs**: Controllers are kept incredibly lean. Complex business logic lives entirely in dedicated, interface-bound Service classes. Data parsing validation is strictly mapped to immutable **DTOs (Data Transfer Objects)**.
+*   **🚦 Robust Authorization & Validation**: 
+    *   Strict Cross-field validation (e.g., verifying a selected room type genuinely belongs to the selected hotel).
+    *   Laravel Policies (`BookingPolicy`) enforce strict data isolation between users.
+    *   Separate public (read-only) and admin (write-protected) routing architectures.
+*   **🚀 Performance Optimizations**: 
+    *   **Redis Caching**: Heavy read endpoints (like fetching available hotels) are aggressively cached using Redis with automated cache-invalidation hooks on writes.
+    *   **Asynchronous Queues**: Post-booking confirmation processes (like sending emails) are offloaded to background jobs, ensuring sub-second API response times.
 
-4. **Serve the application:**
-   ```bash
-   php artisan serve
-   ```
+---
 
-## Overbooking Prevention
+## ⚙️ Setup & Installation
 
-To ensure data consistency and prevent overbooking in high-concurrency environments, we implement **Pessimistic Locking**.
+The project is fully Dockerized using **Laravel Sail**, making setup effortless.
+
+### Prerequisites
+*   Docker & Docker Compose installed.
+*   Composer (optional, for local vendor installation before Sail).
+
+### Installation Steps
+
+1.  **Clone the repository:**
+    ```bash
+    git clone <repository-url>
+    cd mini-hotel-booking-api
+    ```
+
+2.  **Environment Setup:**
+    ```bash
+    cp .env.example .env
+    ```
+    *(The default `.env.example` is fully pre-configured to work instantly with Docker/Sail).*
+
+3.  **Install Dependencies & Start Docker Containers:**
+    ```bash
+    composer install
+    ./vendor/bin/sail up -d
+    ```
+
+4.  **Generate App Key & Run Migrations (with Seeders):**
+    ```bash
+    ./vendor/bin/sail artisan key:generate
+    ./vendor/bin/sail artisan migrate --seed
+    ```
+    *(Seeding generates a rich dataset: 4 hotels globally, complete with varied room types, capacities, and a default test user).*
+
+---
+
+## 🔒 Overbooking Prevention (Technical Deep Dive)
+
+To ensure data consistency in high-concurrency environments, we bypass unreliable application-level checks and enforce **Pessimistic Locking** directly at the database engine level.
 
 ```mermaid
 sequenceDiagram
     participant User
     participant DB
     
-    User->>DB: Begin Transaction
-    User->>DB: RoomType::lockForUpdate()->findOrFail() (Locks exact row)
+    User->>DB: Begin DB Transaction
+    User->>DB: RoomType::lockForUpdate()->findOrFail()
+    Note over DB: Target row is exclusively LOCKED
     DB-->>User: Row Locked
-    Note over User,DB: Other transactions wait here
-    User->>DB: Check Availability
-    alt is available
-        User->>DB: Create Booking
-        User->>DB: Commit & Release Lock
-    else not available
-        User->>DB: Throw InsufficientRoomsException
-        User->>DB: Rollback & Release Lock
+    Note over User,DB: Other concurrent transactions for this room type must WAIT
+    User->>DB: Calculate Real-time Availability
+    alt Rooms Available
+        User->>DB: Calculate Pricing & Create Booking
+        User->>DB: Commit Transaction & Release Lock
+    else Insufficient Rooms
+        User->>DB: Throw InsufficientRoomsException (HTTP 409)
+        User->>DB: Rollback Transaction & Release Lock
     end
 ```
 
-When a booking request is initiated, the application:
-1. Starts a database transaction.
-2. Uses `lockForUpdate()` on the specific `room_type` row. This ensures any concurrent requests for the same room type must wait until the current transaction is finished.
-3. Calculates real-time availability *inside* the lock.
-4. Completes the booking or throws an error (409 Conflict).
-5. Commits the transaction, releasing the lock.
+---
 
-## Pricing Logic
+## 📖 API Documentation & Endpoints
 
-Our system uses a dynamic nightly pricing strategy:
-- **Base Price**: Defined at the `RoomType` level.
-- **Weekend Surcharge**: +20% for nights falling on Friday or Saturday.
-- **Long-Stay Discount**: -10% on the *total sum* for bookings of 5 nights or more.
-- Calculated per room and then multiplied by the number of requested rooms.
+A complete, fully nested **Postman Collection** is included in the repository root: `Mini_Hotel_Booking_API_Postman_Collection.json`. Import this into Postman for instant access to all requests, headers, and payloads.
 
-**Example Calculation:**
-Base price $100 for 5 nights (Mon-Fri)
-- Mon: $100
-- Tue: $100
-- Wed: $100
-- Thu: $100
-- Fri: $120 (+20%)
-- Subtotal: $520
-- Long Stay (>= 5 days): -10% discount ($52)
-- Total: $468
-
-## API Endpoints
-
+### Authentication & Public Routes
 | Method | Endpoint | Description | Auth Required |
-| --- | --- | --- | --- |
-| `POST` | `/api/auth/register` | Register new user | No |
-| `POST` | `/api/auth/login` | Login and get token | No |
-| `POST` | `/api/auth/logout` | Logout (destroy token) | Yes |
-| `GET` | `/api/hotels` | List hotels | No |
-| `GET` | `/api/hotels/{hotel}` | Get single hotel details | No |
-| `GET` | `/api/hotels/{hotel}/room-types` | List hotel room types | No |
-| `GET` | `/api/hotels/{hotel}/room-types/{room_type}` | Get single room type details | No |
-| `GET` | `/api/availability` | Search for available rooms | No |
-| `GET` | `/api/bookings` | View user's bookings | Yes |
-| `POST` | `/api/bookings` | Create a booking | Yes |
-| `GET` | `/api/bookings/{booking}` | Get a single booking details | Yes |
-| `PATCH`| `/api/bookings/{booking}/cancel` | Cancel an existing booking | Yes |
+| :--- | :--- | :--- | :---: |
+| `POST` | `/api/auth/register` | Register a new guest user | ❌ |
+| `POST` | `/api/auth/login` | Authenticate & retrieve Bearer Token | ❌ |
+| `GET` | `/api/availability` | Search available rooms by city, dates, & occupancy | ❌ |
+| `GET` | `/api/hotels` | List all active hotels (Paginated & Cached) | ❌ |
+| `GET` | `/api/hotels/{hotel}/room-types` | View room types for a specific hotel | ❌ |
 
-### Request / Response Examples
+### Guest Operations 
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :---: |
+| `POST` | `/api/bookings` | Create a new hotel booking | 🔐 Valid User |
+| `GET` | `/api/bookings` | View user's booking history | 🔐 Valid User |
+| `GET` | `/api/bookings/{booking}` | Get details of a specific booking | 🔐 Booking Owner |
+| `PATCH`| `/api/bookings/{booking}/cancel` | Cancel an active booking | 🔐 Booking Owner |
 
-#### 1. Availability Search (`GET /api/availability`)
-**Query Parameters:**
-`city=Cairo&check_in=2026-05-01&check_out=2026-05-05&adults=2`
+### Admin Operations 
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :---: |
+| `POST` | `/api/hotels` | Create a new hotel | 🔐 Admin/Staff |
+| `PUT` | `/api/hotels/{hotel}` | Update hotel details | 🔐 Admin/Staff |
+| `DELETE` | `/api/hotels/{hotel}` | Safely soft-delete a hotel | 🔐 Admin/Staff |
 
-**Response (200 OK):**
-```json
-{
-  "data": [
-    {
-      "hotel": { "id": 1, "name": "Grand Cairo Resort", "city": "Cairo", "address": "123 Nile Corniche", "rating": 5 },
-      "room_type": { "id": 2, "name": "Double", "max_occupancy": 2, "base_price": 150 },
-      "available_rooms": 15,
-      "nights": 4,
-      "total_price": 600.00
-    }
-  ]
-}
-```
+---
 
-#### 2. Create Booking (`POST /api/bookings`)
-**Payload:**
-```json
-{
-  "hotel_id": 1,
-  "room_type_id": 2,
-  "guest_name": "John Doe",
-  "guest_email": "john@example.com",
-  "check_in": "2026-05-01",
-  "check_out": "2026-05-05",
-  "rooms_count": 1,
-  "adults_count": 2
-}
-```
+## 🧪 Testing Suite
 
-**Response (201 Created):**
-```json
-{
-  "data": {
-    "id": 1,
-    "hotel": { "id": 1, "name": "Grand Cairo Resort", "city": "Cairo", "address": "123 Nile Corniche", "rating": 5 },
-    "room_type": { "id": 2, "name": "Double", "max_occupancy": 2, "base_price": 150 },
-    "guest_name": "John Doe",
-        "guest_email": "john@example.com",
-        "check_in": "2026-05-01",
-        "check_out": "2026-05-05",
-        "rooms_count": 1,
-        "adults_count": 2,
-        "total_price": 600.00,
-        "status": "pending",
-        "created_at": "2026-04-06T00:00:00+00:00"
-  }
-}
-```
+The application features a comprehensive, robust autonomous test suite covering Feature integration, Unit logic, Edge cases, API Authentication, and graceful failure handling.
 
-## Bonus Features (Implemented)
-
-This project exceeds the base requirements by including the following Senior-level additions:
-
-### 1. Docker Environment (Laravel Sail)
-The project is fully Dockerized. You can start the entire stack (App, MySQL, Redis) with a single command:
+To execute the test suite:
 ```bash
-./vendor/bin/sail up -d
+./vendor/bin/sail artisan test
 ```
-All environment variables are pre-configured for Sail compatibility.
 
-### 2. Redis Caching
-- **Implemented for `HotelController@index`**: Uses `Cache::remember` to cache the list of all hotels for 1 hour.
-- **Cache Invalidation**: Automatically clears the cache (`Cache::forget`) upon `store`, `update`, or `destroy` operations.
-- **Why?**: Drastically reduces Database I/O for read-heavy resources.
+**Test Coverage Highlights:**
+- ✅ Validates Pricing Engine accuracy (including discounts & surcharges).
+- ✅ Tests explicit concurrency scenarios (overlapping bookings).
+- ✅ Protects against Authorization tampering (Users attempting to access extraneous bookings).
+- ✅ Validates complex database isolation logic.
 
-### 3. Asynchronous Queue Jobs
-- **`SendBookingConfirmationJob`**: Dispatched after a successful booking.
-- **Why?**: Decouples the notification process from the HTTP request cycle, ensuring immediate response times for users.
-- **Setup**: Configured to use the `database` queue driver by default.
+---
 
-### 4. Postman Collection
-A complete **Postman Collection** is included in the repository root: `Mini_Hotel_Booking_API_Postman_Collection.json`.
-
-## Senior Code Review
-A detailed professional audit of this codebase is available in the [code_review_report.md](file:///home/esraa/.gemini/antigravity/brain/b21f7a1d-0619-4a18-9d7e-f5aa469236a4/code_review_report.md) artifact, detailing architectural decisions, concurrency safety, and performance optimizations.
-
-## Assumptions Made
-1. **Dynamic Room Pricing**: Pricing is fixed per room type but calculated dynamically based on dates.
-2. **Global Timezone**: All dates are handled exactly based on boundaries to avoid timezone issues.
-3. **Availability Real-time Check**: Availability is strictly calculated exactly upon inquiry, leveraging actual bookings rather than caching available slots per day manually.
-4. **User Scope**: Users will be constrained strictly to see and manage only their respective bookings directly.
+## 💡 Assumptions Made During Development
+1. **Dynamic Nightly Pricing**: Pricing is defined uniquely per room type, but the final total is calculated dynamically based on stay dates and injected pricing rules.
+2. **Global Timezone Normalization**: All check-in and check-out dates are strictly handled using standard boundary intervals `(00:00:00)` to eliminate creeping timezone miscalculations.
+3. **Availability Real-time Matrix**: System availability deliberately avoids fragile cron-based or pre-calculated cache tables; it calculates dynamically at query-time enforcing absolute certainty checking against overlapping confirmed bookings.

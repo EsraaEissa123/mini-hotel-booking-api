@@ -50,7 +50,7 @@
       ]
     },
     {
-      "name": "Public API",
+      "name": "Hotels (Public)",
       "item": [
         {
           "name": "Get Hotels",
@@ -97,7 +97,53 @@
       ]
     },
     {
-      "name": "Protected API",
+      "name": "Hotels (Admin - Auth Required)",
+      "item": [
+        {
+          "name": "Create Hotel",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"name\": \"New Luxury Hotel\",\n  \"city\": \"Cairo\",\n  \"address\": \"456 Pyramids Rd\",\n  \"rating\": 5,\n  \"status\": \"active\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/hotels", "host": ["{{base_url}}"], "path": ["api", "hotels"] }
+          }
+        },
+        {
+          "name": "Update Hotel",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"name\": \"Updated Hotel Name\",\n  \"rating\": 4\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/hotels/1", "host": ["{{base_url}}"], "path": ["api", "hotels", "1"] }
+          }
+        },
+        {
+          "name": "Delete Hotel",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/hotels/1", "host": ["{{base_url}}"], "path": ["api", "hotels", "1"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings (Auth Required)",
       "item": [
         {
           "name": "Create Booking",
@@ -123,6 +169,17 @@
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": { "raw": "{{base_url}}/api/bookings", "host": ["{{base_url}}"], "path": ["api", "bookings"] }
+          }
+        },
+        {
+          "name": "Show Booking",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/bookings/1", "host": ["{{base_url}}"], "path": ["api", "bookings", "1"] }
           }
         },
         {

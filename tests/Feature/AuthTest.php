@@ -88,7 +88,9 @@ class AuthTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->postJson('/api/auth/logout');
+        \Laravel\Sanctum\Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/auth/logout');
 
         $response->assertOk()
             ->assertJsonFragment(['message' => 'Logged out successfully.']);

@@ -38,7 +38,8 @@ The project is fully Dockerized using **Laravel Sail**, making setup effortless.
 
 1.  **Clone the repository:**
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/EsraaEissa123/mini-hotel-booking-api.git
+    
     cd mini-hotel-booking-api
     ```
 

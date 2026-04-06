@@ -30,7 +30,7 @@ class BookingController extends Controller
         return BookingResource::collection($bookings);
     }
 
-    public function store(StoreBookingRequest $request): BookingResource
+    public function store(StoreBookingRequest $request): \Illuminate\Http\JsonResponse
     {
         $data = $request->validated();
         $data['user_id'] = Auth::id();
@@ -42,8 +42,7 @@ class BookingController extends Controller
 
         return (new BookingResource($booking))
             ->response()
-            ->setStatusCode(201)
-            ->original;
+            ->setStatusCode(201);
     }
 
     public function show(Booking $booking): BookingResource
